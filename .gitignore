@@ -1,0 +1,25 @@
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-error.log
+.pnpm-debug.log
+
+# Build output
+_site/
+dist/
+.cache/
+
+# Contentful Cache
+.contentful/
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+
+# IDE & OS Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
