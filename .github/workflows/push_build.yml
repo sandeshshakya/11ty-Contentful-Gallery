@@ -13,6 +13,10 @@ jobs:
     name: Build and Upload to S3
     runs-on: ubuntu-latest
 
+    permissions:
+      id-token: write  # Required for OIDC authentication
+      contents: read
+
     steps:
       # Checkout the repository
       - name: Checkout Repository
