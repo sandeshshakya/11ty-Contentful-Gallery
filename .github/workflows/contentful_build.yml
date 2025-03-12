@@ -30,20 +30,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
       # Install dependencies using a clean install
       - name: Install Dependencies
         run: npm ci
-
-      # Debugging: Check if Contentful secrets are available
-      - name: Debug Environment Variables
-        run: |
-          if [ -z "${{ secrets.CTFL_SPACE }}" ]; then echo "❌ CTFL_SPACE is NOT set"; exit 1; fi
-          if [ -z "${{ secrets.CTFL_ACCESSTOKEN }}" ]; then echo "❌ CTFL_ACCESSTOKEN is NOT set"; exit 1; fi
-          echo "✅ All required environment variables are set"
 
       # Build the Eleventy site
       - name: Build Site
@@ -52,22 +45,21 @@ jobs:
           CTFL_SPACE: ${{ secrets.CTFL_SPACE }}
           CTFL_ACCESSTOKEN: ${{ secrets.CTFL_ACCESSTOKEN }}
 
-      # Configure AWS Credentials using OIDC
+      # Configure AWS Credentials using OIDC (Secure authentication without access keys)
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::588624181414:role/GitHubActionsS3Role
-          aws-region: us-east-1  # Change to your AWS region
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1  # Change to your AWS region if needed
 
-      # Upload static files to S3
+      # Upload static files to S3 with logging and error handling
       - name: Upload to S3
         run: |
-          aws s3 sync ./_site s3://contentful-static-site/ --delete
-
-      # Deploy the built site to GitHub Pages (use github_token instead of deploy_key)
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: _site
-          cname: gallery.contentful.com
+          if [ -d "./_site" ]; then
+            echo "Uploading static files to S3..."
+            aws s3 sync ./_site s3://contentful-static-site/ --delete --exact-timestamps
+            echo "✅ Upload complete!"
+          else
+            echo "❌ Build failed: _site directory not found."
+            exit 1
+          fi
