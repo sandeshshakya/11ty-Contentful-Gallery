@@ -1,4 +1,5 @@
 name: Eleventy Build on Push
+
 on:
   push:
     branches:
@@ -9,29 +10,43 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
+      # Checkout the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v1
+      # Setup Node.js with the latest LTS version and enable dependency caching
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: '12.x'
+          node-version: '20.x'
+          cache: 'npm' # Automatically caches dependencies based on package-lock.json
 
-      - name: Cache dependencies
-        uses: actions/cache@v1
+      # Cache npm dependencies to speed up installs in future runs
+      - name: Cache Dependencies
+        uses: actions/cache@v4
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - run: npm ci
-      - run: npm run build
+      # Install dependencies using a clean install
+      - name: Install Dependencies
+        run: npm ci
 
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+      # Build the Eleventy site
+      - name: Build Site
+        run: npm run build
+
+      # Deploy the built site to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-          publish_dir: _site
-          cname: gallery.contentful.com
+          publish_dir: _site # The output directory of Eleventy
+          cname: gallery.contentful.com # Custom domain for the site
+
