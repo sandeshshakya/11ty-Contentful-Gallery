@@ -25,6 +25,23 @@ jobs:
           node-version: '20.x'
           cache: 'npm' # Automatically caches dependencies based on package-lock.json
 
+      # Debug: Check if secrets exist in GitHub
+      - name: Debug Environment Variables
+        run: |
+          if [ -z "${{ secrets.CTFL_SPACE }}" ]; then echo "❌ CTFL_SPACE is NOT set"; exit 1; fi
+          if [ -z "${{ secrets.CTFL_ACCESSTOKEN }}" ]; then echo "❌ CTFL_ACCESSTOKEN is NOT set"; exit 1; fi
+          echo "✅ All required environment variables are set"
+
+      # Debug: Verify if environment variables are available in the runner
+      - name: Verify Environment Variables
+        run: |
+          echo "Checking if secrets are available in the environment..."
+          echo "CTFL_SPACE is set: ${#CTFL_SPACE}"
+          echo "CTFL_ACCESSTOKEN is set: ${#CTFL_ACCESSTOKEN}"
+        env:
+          CTFL_SPACE: ${{ secrets.CTFL_SPACE }}
+          CTFL_ACCESSTOKEN: ${{ secrets.CTFL_ACCESSTOKEN }}
+
       # Cache npm dependencies to speed up installs in future runs
       - name: Cache Dependencies
         uses: actions/cache@v4
@@ -38,13 +55,16 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      # Build the Eleventy site
+      # Build the Eleventy site (Ensure environment variables are passed)
       - name: Build Site
         run: npm run build
+        env:
+          CTFL_SPACE: ${{ secrets.CTFL_SPACE }}
+          CTFL_ACCESSTOKEN: ${{ secrets.CTFL_ACCESSTOKEN }}
 
-      # Deploy the built site to GitHub Pages
+      # Deploy the built site to GitHub Pages (Use github_token, not deploy_key)
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          deploy_key: ${{ secrets.GITHUB_TOKEN  }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: _site # The output directory of Eleventy
