@@ -10,7 +10,7 @@ on:
 
 jobs:
   deploy:
-    name: Build and Deploy
+    name: Build and Upload to S3
     runs-on: ubuntu-latest
 
     steps:
@@ -61,6 +61,18 @@ jobs:
         env:
           CTFL_SPACE: ${{ secrets.CTFL_SPACE }}
           CTFL_ACCESSTOKEN: ${{ secrets.CTFL_ACCESSTOKEN }}
+
+      # Configure AWS Credentials using OIDC
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::588624181414:role/GitHubActionsS3Role
+          aws-region: us-east-1  # Change to your AWS region
+
+      # Upload static files to S3
+      - name: Upload to S3
+        run: |
+          aws s3 sync ./_site s3://contentful-static-site/ --delete
 
       # Deploy the built site to GitHub Pages (Use github_token, not deploy_key)
       - name: Deploy to GitHub Pages
