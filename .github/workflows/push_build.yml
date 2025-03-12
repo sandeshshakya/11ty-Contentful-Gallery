@@ -3,10 +3,10 @@ name: Eleventy Build on Push
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   deploy:
@@ -48,5 +48,5 @@ jobs:
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           publish_dir: _site # The output directory of Eleventy
-          cname: gallery.contentful.com # Custom domain for the site
+          
 
