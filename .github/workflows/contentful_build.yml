@@ -1,33 +1,56 @@
 name: Eleventy Build on Contentful Publish Event
+
 on:
-    repository_dispatch:
-        types: [publish-event]
+  repository_dispatch:
+    types: [publish-event]
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
+      # Checkout the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v1
+      # Setup Node.js with the latest LTS version and enable dependency caching
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: '12.x'
+          node-version: '20.x'
+          cache: 'npm'
 
-      - name: Cache dependencies
-        uses: actions/cache@v1
+      # Cache npm dependencies to speed up installs in future runs
+      - name: Cache Dependencies
+        uses: actions/cache@v4
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - run: npm ci
-      - run: npm run build
+      # Install dependencies using a clean install
+      - name: Install Dependencies
+        run: npm ci
 
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+      # Debugging: Check if Contentful secrets are available
+      - name: Debug Environment Variables
+        run: |
+          if [ -z "${{ secrets.CTFL_SPACE }}" ]; then echo "❌ CTFL_SPACE is NOT set"; exit 1; fi
+          if [ -z "${{ secrets.CTFL_ACCESSTOKEN }}" ]; then echo "❌ CTFL_ACCESSTOKEN is NOT set"; exit 1; fi
+          echo "✅ All required environment variables are set"
+
+      # Build the Eleventy site
+      - name: Build Site
+        run: npm run build
+        env:
+          CTFL_SPACE: ${{ secrets.CTFL_SPACE }}
+          CTFL_ACCESSTOKEN: ${{ secrets.CTFL_ACCESSTOKEN }}
+
+      # Deploy the built site to GitHub Pages (use github_token instead of deploy_key)
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: _site
           cname: gallery.contentful.com
