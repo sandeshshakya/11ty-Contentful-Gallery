@@ -43,7 +43,7 @@ jobs:
         run: npm run build
         env:
           CTFL_SPACE: ${{ secrets.CTFL_SPACE }}
-          CTFL_ACCESSTOKEN: ${{ secrets.CTFL_ACCESSTOKEN }}
+          CTFL_ACCESSTOKEN: ${{ secrets.CTFL_ACCESS_TOKEN }}
 
       # Configure AWS Credentials using OIDC (Secure authentication without access keys)
       - name: Configure AWS Credentials
